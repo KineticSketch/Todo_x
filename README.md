@@ -30,6 +30,14 @@ Todo_x 是一个轻量级的本地记事应用，帮助你快速记录和管理�
 - **数据导出**：支持导出为 JSON 格式，方便备份
 - **数据清除**：可一键清除所有数据
 
+## 效果
+
+| | |
+|:---:|:---:|
+| ![alt text](md_images/img.png) | ![alt text](md_images/img_3.png) |
+| ![alt text](md_images/img_4.png) | ![alt text](md_images/img_5.png) |
+| ![alt text](md_images/img_2.png) | ![alt text](md_images/img_6.png) |
+
 ## 技术栈
 
 - **框架**：Flutter
