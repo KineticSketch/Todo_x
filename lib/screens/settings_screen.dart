@@ -1,13 +1,19 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:toastification/toastification.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../providers/note_provider.dart';
-import '../providers/theme_provider.dart';
+import '../models/note.dart';
 import '../utils/app_theme.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../utils/data_transfer_helper.dart';
+import 'qr_display_screen.dart';
+import 'qr_scanner_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -18,58 +24,48 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('设置')),
       body: ListView(
         children: [
-          _buildSectionHeader(context, '外观'),
-          Consumer<ThemeProvider>(
-            builder: (context, themeProvider, child) {
-              final isDark = themeProvider.themeMode == ThemeMode.dark;
-              return SwitchListTile(
-                title: const Text('深色模式'),
-                value: isDark,
-                onChanged: (value) {
-                  themeProvider.toggleTheme(value);
-                },
-              );
-            },
-          ),
-          const Divider(),
-          _buildSectionHeader(context, '数据'),
           ListTile(
-            leading: const Icon(Icons.download_outlined),
+            leading: const Icon(Icons.file_download_outlined),
             title: const Text('导出数据'),
             subtitle: const Text('导出为JSON文件'),
             onTap: () => _exportData(context),
           ),
           ListTile(
-            leading: const Icon(
-              Icons.delete_forever_outlined,
-              color: Colors.red,
-            ),
+            leading: const Icon(Icons.clear_all_outlined, color: Colors.red),
             title: const Text('清除数据', style: TextStyle(color: Colors.red)),
             onTap: () => _confirmClearData(context),
           ),
-          const Divider(),
-          _buildSectionHeader(context, '关于'),
           ListTile(
-            leading: Icon(Icons.person_outline),
-            title: Text('关于作者'),
-            subtitle: Text('KineticSketch'),
+            leading: const Icon(Icons.file_upload_outlined),
+            title: const Text('导入数据'),
+            subtitle: const Text('从JSON文件导入'),
+            onTap: () => _importFromJson(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.qr_code_2_outlined),
+            title: const Text('二维码分享数据'),
+            onTap: () => _shareViaQr(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.qr_code_scanner_outlined),
+            title: const Text('二维码导入数据'),
+            onTap: () => _importViaQr(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.share_outlined),
+            title: const Text('分享数据'),
+            subtitle: const Text('分享JSON文件到微信等'),
+            onTap: () => _shareData(context),
+          ),
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: const Text('关于作者'),
+            subtitle: const Text('KineticSketch'),
             onTap: () {
               openUrl('https://github.com/KineticSketch/Todo_x');
             },
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-        ),
       ),
     );
   }
@@ -91,9 +87,13 @@ class SettingsScreen extends StatelessWidget {
       await Share.shareXFiles([XFile(file.path)], text: 'Todo_x Backup');
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('导出失败: $e')));
+      toastification.show(
+        context: context,
+        title: Text('导出失败: $e'),
+        autoCloseDuration: const Duration(seconds: 3),
+        type: ToastificationType.error,
+        style: ToastificationStyle.flat,
+      );
     }
   }
 
@@ -113,14 +113,180 @@ class SettingsScreen extends StatelessWidget {
               Provider.of<NoteProvider>(context, listen: false).clearAllData();
               Navigator.pop(dialogContext);
               if (!context.mounted) return;
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('所有数据已清除')));
+              toastification.show(
+                context: context,
+                title: const Text('所有数据已清除'),
+                autoCloseDuration: const Duration(seconds: 3),
+                type: ToastificationType.success,
+                style: ToastificationStyle.flat,
+              );
             },
             child: const Text('清除', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _importFromJson(BuildContext context) async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result != null) {
+        final file = File(result.files.single.path!);
+        final jsonString = await file.readAsString();
+        final notesData = DataTransferHelper.importFromJson(jsonString);
+
+        if (!context.mounted) return;
+        final provider = Provider.of<NoteProvider>(context, listen: false);
+
+        final notes = notesData.map((map) => Note.fromMap(map)).toList();
+        final count = await provider.importNotes(notes);
+
+        if (!context.mounted) return;
+        toastification.show(
+          context: context,
+          title: Text('成功导入 $count 条记事'),
+          autoCloseDuration: const Duration(seconds: 3),
+          type: ToastificationType.success,
+          style: ToastificationStyle.flat,
+        );
+      }
+    } catch (e) {
+      if (!context.mounted) return;
+      toastification.show(
+        context: context,
+        title: Text('导入失败: $e'),
+        autoCloseDuration: const Duration(seconds: 3),
+        type: ToastificationType.error,
+        style: ToastificationStyle.flat,
+      );
+    }
+  }
+
+  Future<void> _shareViaQr(BuildContext context) async {
+    try {
+      final provider = Provider.of<NoteProvider>(context, listen: false);
+      final notes = provider.notes;
+      if (notes.isEmpty) {
+        toastification.show(
+          context: context,
+          title: const Text('没有可分享的数据'),
+          autoCloseDuration: const Duration(seconds: 3),
+          type: ToastificationType.info,
+          style: ToastificationStyle.flat,
+        );
+        return;
+      }
+
+      final jsonString = jsonEncode(notes.map((n) => n.toMap()).toList());
+      final qrData = DataTransferHelper.generateQrData(jsonString);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => QrDisplayScreen(data: qrData)),
+      );
+    } catch (e) {
+      toastification.show(
+        context: context,
+        title: Text('生成二维码失败: $e'),
+        autoCloseDuration: const Duration(seconds: 3),
+        type: ToastificationType.error,
+        style: ToastificationStyle.flat,
+      );
+    }
+  }
+
+  Future<void> _importViaQr(BuildContext context) async {
+    final status = await Permission.camera.request();
+    if (status.isGranted) {
+      if (!context.mounted) return;
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const QrScannerScreen()),
+      );
+
+      if (result != null && result is String) {
+        try {
+          final jsonString = DataTransferHelper.parseQrData(result);
+          final notesData = DataTransferHelper.importFromJson(jsonString);
+
+          if (!context.mounted) return;
+          final provider = Provider.of<NoteProvider>(context, listen: false);
+          final notes = notesData.map((map) => Note.fromMap(map)).toList();
+          final count = await provider.importNotes(notes);
+
+          if (!context.mounted) return;
+          toastification.show(
+            context: context,
+            title: Text('成功导入 $count 条记事'),
+            autoCloseDuration: const Duration(seconds: 3),
+            type: ToastificationType.success,
+            style: ToastificationStyle.flat,
+          );
+        } catch (e) {
+          if (!context.mounted) return;
+          toastification.show(
+            context: context,
+            title: const Text('无效的二维码数据'),
+            autoCloseDuration: const Duration(seconds: 3),
+            type: ToastificationType.error,
+            style: ToastificationStyle.flat,
+          );
+        }
+      }
+    } else {
+      if (!context.mounted) return;
+      toastification.show(
+        context: context,
+        title: const Text('需要相机权限以扫描二维码'),
+        autoCloseDuration: const Duration(seconds: 3),
+        type: ToastificationType.warning,
+        style: ToastificationStyle.flat,
+      );
+    }
+  }
+
+  Future<void> _shareData(BuildContext context) async {
+    try {
+      final provider = Provider.of<NoteProvider>(context, listen: false);
+      final notes = provider.notes;
+
+      if (notes.isEmpty) {
+        toastification.show(
+          context: context,
+          title: const Text('没有可分享的数据'),
+          autoCloseDuration: const Duration(seconds: 3),
+          type: ToastificationType.info,
+          style: ToastificationStyle.flat,
+        );
+        return;
+      }
+
+      final jsonString = jsonEncode(notes.map((n) => n.toMap()).toList());
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final fileName = 'todo_x_backup_$timestamp.json';
+
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsString(jsonString);
+
+      // Share the file
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: 'Todo_x 数据备份 - ${notes.length} 条记事');
+    } catch (e) {
+      if (!context.mounted) return;
+      toastification.show(
+        context: context,
+        title: Text('分享失败: $e'),
+        autoCloseDuration: const Duration(seconds: 3),
+        type: ToastificationType.error,
+        style: ToastificationStyle.flat,
+      );
+    }
   }
 }

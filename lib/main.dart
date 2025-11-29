@@ -1,4 +1,5 @@
 import 'package:chinese_font_library/chinese_font_library.dart';
+import 'package:toastification/toastification.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/note_provider.dart';
@@ -22,13 +23,17 @@ class MyApp extends StatelessWidget {
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
-          return MaterialApp(
-            title: 'ToDo X',
-            theme: AppTheme.lightTheme.useSystemChineseFont(Brightness.light),
-            darkTheme: AppTheme.darkTheme.useSystemChineseFont(Brightness.dark),
-            themeMode: themeProvider.themeMode,
-            home: const HomeScreen(),
-            debugShowCheckedModeBanner: false,
+          return ToastificationWrapper(
+            child: MaterialApp(
+              title: 'ToDo X',
+              theme: AppTheme.lightTheme.useSystemChineseFont(Brightness.light),
+              darkTheme: AppTheme.darkTheme.useSystemChineseFont(
+                Brightness.dark,
+              ),
+              themeMode: themeProvider.themeMode,
+              home: const HomeScreen(),
+              debugShowCheckedModeBanner: false,
+            ),
           );
         },
       ),

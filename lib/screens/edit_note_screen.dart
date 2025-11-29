@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toastification/toastification.dart';
 import 'package:provider/provider.dart';
 import '../models/note.dart';
 import '../providers/note_provider.dart';
@@ -44,9 +45,13 @@ class _EditNoteScreenState extends State<EditNoteScreen> {
     Provider.of<NoteProvider>(context, listen: false).updateNote(updatedNote);
     Navigator.pop(context);
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('记事已更新')));
+    toastification.show(
+      context: context,
+      title: const Text('记事已更新'),
+      autoCloseDuration: const Duration(seconds: 3),
+      type: ToastificationType.success,
+      style: ToastificationStyle.flat,
+    );
   }
 
   @override

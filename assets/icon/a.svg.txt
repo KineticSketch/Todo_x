@@ -1,0 +1,9 @@
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- 多色列表条目 -->
+  <line x1="50" y1="90" x2="250" y2="90" stroke="#DB4437" stroke-width="24" stroke-linecap="round"/>
+  <line x1="50" y1="150" x2="250" y2="150" stroke="#4285F4" stroke-width="24" stroke-linecap="round"/>
+  <line x1="50" y1="210" x2="250" y2="210" stroke="#F4B400" stroke-width="24" stroke-linecap="round"/>
+
+  <!-- 勾选 -->
+  <path d="M 60 150 L 110 200 L 240 80" fill="none" stroke="#0F9D58" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

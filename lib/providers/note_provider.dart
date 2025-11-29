@@ -116,6 +116,18 @@ class NoteProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<int> importNotes(List<Note> notes) async {
+    int count = 0;
+    for (var note in notes) {
+      // Reset ID to allow auto-increment and avoid conflicts
+      final noteToInsert = note.copyWith(id: null);
+      await DatabaseHelper.instance.create(noteToInsert);
+      count++;
+    }
+    await loadNotes();
+    return count;
+  }
+
   // Helper to group notes by date
   Map<String, List<Note>> groupNotesByDate(
     List<Note> notesList, {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toastification/toastification.dart';
 import 'package:provider/provider.dart';
 import '../providers/note_provider.dart';
 
@@ -37,9 +38,13 @@ class _TodayScreenState extends State<TodayScreen> {
     // Hide keyboard and unfocus
     FocusScope.of(context).unfocus();
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('记事已添加')));
+    toastification.show(
+      context: context,
+      title: const Text('记事已添加'),
+      autoCloseDuration: const Duration(seconds: 3),
+      type: ToastificationType.success,
+      style: ToastificationStyle.flat,
+    );
   }
 
   @override
@@ -82,6 +87,7 @@ class _TodayScreenState extends State<TodayScreen> {
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ),
+              const SizedBox(height: 16),
             ],
           ),
         ),

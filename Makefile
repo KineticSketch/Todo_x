@@ -15,6 +15,4 @@ build-apk:
 build-all-apk:
 	flutter build apk --split-per-abi --release --no-tree-shake-icons
 	
-build-android:
-	make build-apk
-	make build-all-apk
+build-android: build-apk build-all-apk

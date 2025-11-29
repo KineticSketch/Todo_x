@@ -8,11 +8,13 @@ plugins {
 
 val keystorePropertiesFile = rootProject.file("key.properties")
 val keystoreProperties = Properties()
-if (keystorePropertiesFile.exists()) {
+val hasKeyProperties = keystorePropertiesFile.exists()
+
+if (hasKeyProperties) {
     println("🔑 Found key.properties at: ${keystorePropertiesFile.absolutePath}")
     keystoreProperties.load(keystorePropertiesFile.inputStream())
 } else {
-    println("⚠️ key.properties not found")
+    println("⚠️ key.properties not found, using DEBUG build only")
 }
 
 android {
@@ -23,6 +25,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -38,12 +41,14 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            storeFile = file(keystoreProperties["storeFile"] as String)
-            storePassword = keystoreProperties["storePassword"] as String
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
-            storeType = "JKS"
+        if (hasKeyProperties) {
+            create("release") {
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeType = "JKS"
+            }
         }
     }
 
@@ -51,11 +56,21 @@ android {
         getByName("release") {
             isMinifyEnabled = false
             isShrinkResources = false
-            signingConfig = signingConfigs.getByName("release")
+
+            // 只有 key.properties 存在才启用 release 签名
+            if (hasKeyProperties) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                println("⚠️ No key.properties → Release build will NOT be signed")
+            }
         }
     }
 }
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

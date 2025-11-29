@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'today_screen.dart';
 import 'overview_screen.dart';
 import 'settings_screen.dart';
@@ -22,24 +23,18 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.edit_note), label: '记事'),
-          NavigationDestination(
-            icon: Icon(Icons.view_agenda_outlined),
-            label: '总览',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            label: '设置',
-          ),
+      bottomNavigationBar: ConvexAppBar(
+        style: TabStyle.react,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        color: Theme.of(context).colorScheme.onSurface,
+        activeColor: Theme.of(context).colorScheme.primary,
+        items: const [
+          TabItem(icon: Icons.edit_note_outlined),
+          TabItem(icon: Icons.view_agenda_outlined),
+          TabItem(icon: Icons.settings_outlined),
         ],
+        initialActiveIndex: _currentIndex,
+        onTap: (int i) => setState(() => _currentIndex = i),
       ),
     );
   }

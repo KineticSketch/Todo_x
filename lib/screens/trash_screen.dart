@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:toastification/toastification.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../providers/note_provider.dart';
@@ -213,9 +214,13 @@ class TrashScreen extends StatelessWidget {
               }
               if (!context.mounted) return;
               Navigator.pop(dialogContext);
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('回收站已清空')));
+              toastification.show(
+                context: context,
+                title: const Text('回收站已清空'),
+                autoCloseDuration: const Duration(seconds: 3),
+                type: ToastificationType.success,
+                style: ToastificationStyle.flat,
+              );
             },
             child: const Text('清空', style: TextStyle(color: Colors.red)),
           ),

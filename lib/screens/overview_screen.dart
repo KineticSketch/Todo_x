@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import '../providers/note_provider.dart';
@@ -26,7 +27,7 @@ class OverviewScreen extends StatelessWidget {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline),
+            icon: const Icon(Icons.recycling_outlined),
             onPressed: () {
               Navigator.push(
                 context,
@@ -195,6 +196,7 @@ class OverviewScreen extends StatelessWidget {
         ],
       ),
       child: ListTile(
+        onTap: () => _showNoteDetail(context, note),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         title: Row(
           children: [
@@ -271,6 +273,49 @@ class OverviewScreen extends StatelessWidget {
               Navigator.pop(dialogContext);
             },
             child: const Text('归档'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNoteDetail(BuildContext context, Note note) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(note.title),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                DateFormat('yyyy-MM-dd HH:mm').format(note.createdTime),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              Text(note.content),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditNoteScreen(note: note),
+                ),
+              );
+            },
+            child: const Text('编辑'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
           ),
         ],
       ),
